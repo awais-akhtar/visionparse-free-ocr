@@ -146,7 +146,20 @@ for region in result.regions:
 
 Model weights are not bundled. Keep them outside the package or in `visionparse/models/` locally, but do not commit them.
 
-The original research code referenced fine-tuned YOLO weights such as `best (1).pt` and `best (2).pt`. Those files were not present in this workspace when the public package was prepared, so the repo ships the model loader and model-card docs rather than pretending the weights are included. See `docs/model-card.md`.
+The original research code referenced fine-tuned YOLO weights such as `best (1).pt` and `best (2).pt`. Those binary files were not present in this workspace when the public package was prepared. The repo does include the safe model reference assets that were present, including `yolov3.cfg`, `coco.names`, and COCO/TensorFlow config files. See `docs/model-card.md`.
+
+Darknet/OpenCV YOLO is also supported:
+
+```python
+from visionparse.detection.yolo import OpenCVDarknetYoloDetector
+
+detector = OpenCVDarknetYoloDetector(
+    weights_path="models/yolov3.weights",
+    # config_path and names_path default to the packaged yolov3.cfg/coco.names
+)
+
+detections = detector.detect("menu.jpg")
+```
 
 ## Command line
 
@@ -186,6 +199,12 @@ Run YOLO only:
 
 ```bash
 visionparse detect menu.jpg --model models/menu-sections.pt --pretty
+```
+
+Run Darknet YOLO with the packaged config/labels and your local weights:
+
+```bash
+visionparse detect menu.jpg --backend darknet --model models/yolov3.weights --pretty
 ```
 
 Save an annotated detection image:

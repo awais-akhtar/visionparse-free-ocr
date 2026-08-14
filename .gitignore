@@ -54,3 +54,7 @@ test.ipynb
 *.tflite
 visionparse/models/*
 !visionparse/models/README.md
+!visionparse/models/__init__.py
+!visionparse/models/*.cfg
+!visionparse/models/*.names
+!visionparse/models/*.pbtxt

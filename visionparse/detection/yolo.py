@@ -7,6 +7,7 @@ loaded only when a detector is created.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
@@ -128,6 +129,137 @@ class YoloDetector:
         return detections
 
 
+class OpenCVDarknetYoloDetector:
+    """YOLO detector for Darknet config/weights through OpenCV DNN.
+
+    This supports the older research assets in the project, such as
+    ``yolov3.cfg`` and ``coco.names``. A Darknet config and class-name file can
+    be shipped safely, but the binary ``.weights`` file must be supplied by the
+    user at runtime.
+    """
+
+    def __init__(
+        self,
+        weights_path: str | Path,
+        config_path: str | Path | None = None,
+        names_path: str | Path | None = None,
+        confidence: float = 0.5,
+        nms_threshold: float = 0.4,
+        input_size: tuple[int, int] = (416, 416),
+        scale: float = 1 / 255.0,
+        swap_rb: bool = True,
+        crop: bool = False,
+    ) -> None:
+        self.weights_path = str(weights_path)
+        self.config_path = str(config_path or packaged_model_path("yolov3.cfg"))
+        self.names_path = str(names_path or packaged_model_path("coco.names"))
+        self.confidence = confidence
+        self.nms_threshold = nms_threshold
+        self.input_size = input_size
+        self.scale = scale
+        self.swap_rb = swap_rb
+        self.crop = crop
+        self.names = load_class_names(self.names_path)
+
+        try:
+            import cv2
+        except ImportError as exc:  # pragma: no cover - optional dependency
+            raise ImportError("Install Darknet YOLO support with `pip install visionparse[darknet]`.") from exc
+
+        if not Path(self.config_path).exists():
+            raise FileNotFoundError(f"YOLO config not found: {self.config_path}")
+        if not Path(self.weights_path).exists():
+            raise FileNotFoundError(
+                f"YOLO weights not found: {self.weights_path}. "
+                "The package includes config/labels, but trained weights must be supplied locally."
+            )
+
+        self.cv2 = cv2
+        self.net = cv2.dnn.readNetFromDarknet(self.config_path, self.weights_path)
+
+    def detect(self, image: str | Path | Any) -> list[Detection]:
+        """Run Darknet YOLO through OpenCV DNN."""
+
+        cv2 = self.cv2
+        if isinstance(image, (str, Path)):
+            frame = cv2.imread(str(image))
+            if frame is None:
+                raise ValueError(f"Could not read image: {image}")
+        else:
+            frame = image
+
+        height, width = frame.shape[:2]
+        blob = cv2.dnn.blobFromImage(
+            frame,
+            scalefactor=self.scale,
+            size=self.input_size,
+            mean=(0, 0, 0),
+            swapRB=self.swap_rb,
+            crop=self.crop,
+        )
+        self.net.setInput(blob)
+        outputs = self.net.forward(self._output_layer_names())
+
+        boxes: list[list[int]] = []
+        confidences: list[float] = []
+        class_ids: list[int] = []
+
+        for output in outputs:
+            for row in output:
+                if len(row) <= 5:
+                    continue
+                objectness = float(row[4])
+                scores = row[5:]
+                class_id = int(scores.argmax())
+                class_score = float(scores[class_id])
+                confidence = objectness * class_score
+                if confidence < self.confidence:
+                    continue
+
+                center_x = int(row[0] * width)
+                center_y = int(row[1] * height)
+                box_width = int(row[2] * width)
+                box_height = int(row[3] * height)
+                left = int(center_x - box_width / 2)
+                top = int(center_y - box_height / 2)
+
+                boxes.append([left, top, box_width, box_height])
+                confidences.append(confidence)
+                class_ids.append(class_id)
+
+        indices = cv2.dnn.NMSBoxes(boxes, confidences, self.confidence, self.nms_threshold)
+        selected = _flatten_indices(indices)
+        detections: list[Detection] = []
+
+        for index in selected:
+            left, top, box_width, box_height = boxes[index]
+            x1 = max(0, left)
+            y1 = max(0, top)
+            x2 = min(width, left + box_width)
+            y2 = min(height, top + box_height)
+            class_id = class_ids[index]
+            label = self.names[class_id] if 0 <= class_id < len(self.names) else str(class_id)
+            detections.append(
+                Detection(
+                    label=label,
+                    confidence=confidences[index],
+                    box=(x1, y1, x2, y2),
+                    class_id=class_id,
+                )
+            )
+
+        return detections
+
+    def _output_layer_names(self) -> list[str]:
+        layer_names = self.net.getLayerNames()
+        unconnected = self.net.getUnconnectedOutLayers()
+        indices = _flatten_indices(unconnected)
+        return [layer_names[index - 1] for index in indices]
+
+
+DarknetYoloDetector = OpenCVDarknetYoloDetector
+
+
 def detect_boxes(
     image: str | Path,
     model_path: str | Path,
@@ -207,6 +339,34 @@ def _load_yolo_class(provider: str) -> Any:
     )
 
 
+def packaged_model_path(filename: str) -> Path:
+    """Return the path to a model reference file packaged with VisionParse."""
+
+    return Path(str(files("visionparse.models").joinpath(filename)))
+
+
+def available_packaged_assets() -> dict[str, str]:
+    """List small model/config assets bundled with the package."""
+
+    root = files("visionparse.models")
+    assets: dict[str, str] = {}
+    for name in ("yolov3.cfg", "coco.names", "mscoco_label_map.pbtxt", "ssd_mobilenet_v2_coco.pbtxt"):
+        resource = root.joinpath(name)
+        if resource.is_file():
+            assets[name] = str(Path(str(resource)))
+    return assets
+
+
+def load_class_names(path: str | Path) -> list[str]:
+    """Read class labels from a Darknet ``.names`` file."""
+
+    return [
+        line.strip()
+        for line in Path(path).read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+
 def _tensor_to_python(value: Any) -> Any:
     for method in ("detach", "cpu"):
         if hasattr(value, method):
@@ -255,3 +415,16 @@ def _label_for(names: Any, class_id: Optional[int]) -> str:
         return str(names[class_id])
     return str(class_id)
 
+
+def _flatten_indices(indices: Any) -> list[int]:
+    indices = _tensor_to_python(indices)
+    if indices is None:
+        return []
+    result: list[int] = []
+    for item in indices:
+        if isinstance(item, (list, tuple)):
+            if item:
+                result.append(int(item[0]))
+        else:
+            result.append(int(item))
+    return result

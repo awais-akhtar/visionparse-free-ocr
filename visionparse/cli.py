@@ -52,6 +52,14 @@ def build_parser() -> argparse.ArgumentParser:
     parse.add_argument("--lang", default="eng")
     parse.add_argument("--tesseract-cmd", default=None)
     parse.add_argument("--yolo-model", default=None, help="Optional YOLO model path.")
+    parse.add_argument(
+        "--yolo-backend",
+        choices=["ultralytics", "darknet"],
+        default="ultralytics",
+        help="Use Ultralytics .pt models or OpenCV Darknet cfg/weights.",
+    )
+    parse.add_argument("--yolo-config", default=None, help="Darknet YOLO .cfg path.")
+    parse.add_argument("--yolo-names", default=None, help="Darknet YOLO .names path.")
     parse.add_argument("--yolo-confidence", type=float, default=0.25)
     parse.add_argument("--default-currency", default=None)
     parse.add_argument("--allow-plain-numbers", action="store_true")
@@ -60,7 +68,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     detect = subparsers.add_parser("detect", help="Run YOLO detection on an image.")
     detect.add_argument("image", help="Path to an image.")
-    detect.add_argument("--model", required=True, help="YOLO model path or model name.")
+    detect.add_argument("--model", required=True, help="Ultralytics model path/name or Darknet weights path.")
+    detect.add_argument(
+        "--backend",
+        choices=["ultralytics", "darknet"],
+        default="ultralytics",
+        help="Detection backend.",
+    )
+    detect.add_argument("--config", default=None, help="Darknet YOLO .cfg path.")
+    detect.add_argument("--names", default=None, help="Darknet YOLO .names path.")
     detect.add_argument("--confidence", type=float, default=0.25)
     detect.add_argument("--output", type=Path, help="Optional annotated image path.")
     detect.add_argument("--pretty", action="store_true")
@@ -97,13 +113,14 @@ def cmd_parse(args: argparse.Namespace) -> int:
 
     pipeline = DocumentPipeline(
         ocr_engine=args.engine,
+        detector=_build_detector_from_args(args),
         default_currency=args.default_currency,
         allow_plain_number_prices=args.allow_plain_numbers,
         ocr_options=ocr_options,
     )
     result = pipeline.run(
         args.image,
-        yolo_model=args.yolo_model,
+        yolo_model=args.yolo_model if args.yolo_backend == "ultralytics" else None,
         yolo_confidence=args.yolo_confidence,
     )
     _write_json(result.to_dict(), pretty=args.pretty)
@@ -111,9 +128,9 @@ def cmd_parse(args: argparse.Namespace) -> int:
 
 
 def cmd_detect(args: argparse.Namespace) -> int:
-    from .detection.yolo import YoloDetector, draw_detections
+    from .detection.yolo import draw_detections
 
-    detector = YoloDetector(args.model, confidence=args.confidence)
+    detector = _build_detector_from_args(args)
     detections = detector.detect(args.image)
     payload: dict[str, Any] = {"detections": [detection.to_dict() for detection in detections]}
     if args.output:
@@ -121,6 +138,33 @@ def cmd_detect(args: argparse.Namespace) -> int:
         payload["output"] = str(output)
     _write_json(payload, pretty=args.pretty)
     return 0
+
+
+def _build_detector_from_args(args: argparse.Namespace) -> Any:
+    model = getattr(args, "model", None) or getattr(args, "yolo_model", None)
+    backend = getattr(args, "backend", None) or getattr(args, "yolo_backend", "ultralytics")
+    confidence = getattr(args, "confidence", None)
+    if confidence is None:
+        confidence = getattr(args, "yolo_confidence", 0.25)
+
+    if not model:
+        return None
+
+    if backend == "darknet":
+        from .detection.yolo import OpenCVDarknetYoloDetector
+
+        config = getattr(args, "config", None) or getattr(args, "yolo_config", None)
+        names = getattr(args, "names", None) or getattr(args, "yolo_names", None)
+        return OpenCVDarknetYoloDetector(
+            weights_path=model,
+            config_path=config,
+            names_path=names,
+            confidence=confidence,
+        )
+
+    from .detection.yolo import YoloDetector
+
+    return YoloDetector(model, confidence=confidence)
 
 
 def _read_text_argument(args: argparse.Namespace) -> str:
@@ -138,4 +182,3 @@ def _write_json(payload: Any, *, pretty: bool = False) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

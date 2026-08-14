@@ -55,6 +55,10 @@ yolo = [
   "opencv-python-headless>=4.8",
   "ultralytics>=8.0",
 ]
+darknet = [
+  "numpy>=1.24",
+  "opencv-python-headless>=4.8",
+]
 easyocr = [
   "easyocr>=1.7",
   "numpy>=1.24",

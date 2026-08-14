@@ -1,6 +1,31 @@
-# Local model directory
+# Model assets
 
-Put local YOLO weights here if you want a tidy project layout.
+This folder contains small model reference files recovered from the research workspace:
 
-Model files such as `.pt`, `.pth`, `.onnx`, `.pb`, and `.tflite` are ignored by git on purpose. They are usually large, easy to regenerate/download, and not safe to publish accidentally.
+- `yolov3.cfg`
+- `coco.names`
+- `mscoco_label_map.pbtxt`
+- `ssd_mobilenet_v2_coco.pbtxt`
 
+Large binary weights are not committed:
+
+- `.pt`
+- `.pth`
+- `.weights`
+- `.onnx`
+- `.pb`
+- `.tflite`
+
+The legacy scripts reference fine-tuned weights named like `best (1).pt` and `best (2).pt`, and TensorFlow examples reference `frozen_inference_graph.pb`. Those files are not present in this workspace. Put them here locally or pass their path at runtime.
+
+Example with Darknet YOLO:
+
+```bash
+visionparse detect menu.jpg --backend darknet --model models/yolov3.weights
+```
+
+Example with Ultralytics/fine-tuned `.pt` weights:
+
+```bash
+visionparse detect menu.jpg --backend ultralytics --model models/best.pt
+```
