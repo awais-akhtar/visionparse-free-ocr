@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.visionparse_private_legacy/
+*service-account*.json
+*service_account*.json
+*credentials*.json
+*credential*.json
+*secret*.json
+*cheapminibus*.json
+
+# Generated OCR/CV artifacts
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+*.webp
+output*.txt
+outputs*.txt
+recognized_text*.txt
+ocr_results*.txt
+temp_image*
+test.ipynb
+
+# Model weights should be downloaded by the user, not committed.
+*.pt
+*.pth
+*.onnx
+*.pb
+*.tflite
+visionparse/models/*
+!visionparse/models/README.md

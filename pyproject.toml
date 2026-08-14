@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "visionparse"
+version = "0.1.0"
+description = "A tidy OCR, object-detection, price-extraction, and document parsing toolkit for computer-vision workflows."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Awais Akhtar" }
+]
+keywords = [
+  "ocr",
+  "computer-vision",
+  "object-detection",
+  "yolo",
+  "price-extraction",
+  "document-ai",
+  "langchain",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Image Recognition",
+  "Topic :: Text Processing",
+]
+dependencies = [
+  "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+ocr = [
+  "pytesseract>=0.3.10",
+]
+opencv = [
+  "numpy>=1.24",
+  "opencv-python-headless>=4.8",
+]
+yolo = [
+  "numpy>=1.24",
+  "opencv-python-headless>=4.8",
+  "ultralytics>=8.0",
+]
+easyocr = [
+  "easyocr>=1.7",
+  "numpy>=1.24",
+]
+keras = [
+  "keras-ocr>=0.9",
+  "numpy>=1.24",
+]
+google = [
+  "google-cloud-vision>=3.7",
+]
+llm = [
+  "langchain>=0.2",
+  "langchain-openai>=0.1",
+]
+all = [
+  "easyocr>=1.7",
+  "google-cloud-vision>=3.7",
+  "keras-ocr>=0.9",
+  "langchain>=0.2",
+  "langchain-openai>=0.1",
+  "numpy>=1.24",
+  "opencv-python-headless>=4.8",
+  "pytesseract>=0.3.10",
+  "ultralytics>=8.0",
+]
+dev = [
+  "build>=1.2",
+  "pytest>=8",
+  "ruff>=0.6",
+  "twine>=5",
+]
+
+[project.urls]
+Homepage = "https://github.com/awais-akhtar/VisionParse"
+Repository = "https://github.com/awais-akhtar/VisionParse"
+Issues = "https://github.com/awais-akhtar/VisionParse/issues"
+
+[project.scripts]
+visionparse = "visionparse.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["visionparse*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
