@@ -38,6 +38,7 @@ env/
 *.tif
 *.tiff
 *.webp
+!examples/assets/README.md
 output*.txt
 outputs*.txt
 recognized_text*.txt

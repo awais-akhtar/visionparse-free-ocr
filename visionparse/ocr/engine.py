@@ -9,6 +9,7 @@ from statistics import mean
 from typing import Any, Mapping, Optional, Sequence
 
 from .preprocessing import enhance_for_ocr, image_to_bytes, load_image
+from .localization import align_tokens, tokens_from_dicts
 
 
 Box = tuple[int, int, int, int]
@@ -24,9 +25,19 @@ class OCRResult:
     boxes: tuple[Box, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
+    @property
+    def layout_text(self) -> str:
+        """Layout-preserving text when token metadata is available."""
+
+        tokens = tokens_from_dicts(self.metadata.get("tokens", []))
+        if not tokens:
+            return self.text
+        return align_tokens(tokens)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "text": self.text,
+            "layout_text": self.layout_text,
             "engine": self.engine,
             "confidence": self.confidence,
             "boxes": [list(box) for box in self.boxes],
@@ -84,6 +95,7 @@ class TesseractOCR(BaseOCREngine):
         text = pytesseract.image_to_string(prepared, lang=self.languages, config=self.config)
 
         boxes: list[Box] = []
+        tokens: list[dict[str, Any]] = []
         confidences: list[float] = []
         try:
             data = pytesseract.image_to_data(
@@ -102,7 +114,9 @@ class TesseractOCR(BaseOCREngine):
                 top = int(data["top"][i])
                 width = int(data["width"][i])
                 height = int(data["height"][i])
-                boxes.append((left, top, left + width, top + height))
+                box = (left, top, left + width, top + height)
+                boxes.append(box)
+                tokens.append({"text": str(word), "box": list(box), "confidence": confidence})
         except Exception:
             # OCR text is more important than box metadata. Keep the read stable.
             pass
@@ -112,7 +126,7 @@ class TesseractOCR(BaseOCREngine):
             engine=self.name,
             confidence=mean(confidences) if confidences else None,
             boxes=tuple(boxes),
-            metadata={"languages": self.languages, "config": self.config},
+            metadata={"languages": self.languages, "config": self.config, "tokens": tokens},
         )
 
 
@@ -151,6 +165,7 @@ class EasyOCR(BaseOCREngine):
         detections = reader.readtext(source, detail=1)
         words: list[str] = []
         boxes: list[Box] = []
+        tokens: list[dict[str, Any]] = []
         confidences: list[float] = []
 
         for bbox, text, confidence in detections:
@@ -159,13 +174,20 @@ class EasyOCR(BaseOCREngine):
             xs = [int(point[0]) for point in bbox]
             ys = [int(point[1]) for point in bbox]
             boxes.append((min(xs), min(ys), max(xs), max(ys)))
+            tokens.append(
+                {
+                    "text": str(text),
+                    "box": [min(xs), min(ys), max(xs), max(ys)],
+                    "confidence": float(confidence),
+                }
+            )
 
         return OCRResult(
             text=" ".join(words).strip(),
             engine=self.name,
             confidence=mean(confidences) if confidences else None,
             boxes=tuple(boxes),
-            metadata={"languages": self.languages},
+            metadata={"languages": self.languages, "tokens": tokens},
         )
 
 
@@ -199,13 +221,21 @@ class KerasOCR(BaseOCREngine):
 
         words: list[str] = []
         boxes: list[Box] = []
+        tokens: list[dict[str, Any]] = []
         for word, bbox in predictions:
             words.append(str(word))
             xs = [int(point[0]) for point in bbox]
             ys = [int(point[1]) for point in bbox]
-            boxes.append((min(xs), min(ys), max(xs), max(ys)))
+            box = (min(xs), min(ys), max(xs), max(ys))
+            boxes.append(box)
+            tokens.append({"text": str(word), "box": list(box), "confidence": None})
 
-        return OCRResult(text=" ".join(words).strip(), engine=self.name, boxes=tuple(boxes))
+        return OCRResult(
+            text=" ".join(words).strip(),
+            engine=self.name,
+            boxes=tuple(boxes),
+            metadata={"tokens": tokens},
+        )
 
 
 class GoogleVisionOCR(BaseOCREngine):
@@ -258,13 +288,16 @@ class GoogleVisionOCR(BaseOCREngine):
         annotations = list(response.text_annotations or [])
         text = annotations[0].description.strip() if annotations else ""
         boxes: list[Box] = []
+        tokens: list[dict[str, Any]] = []
         for annotation in annotations[1:]:
             vertices = annotation.bounding_poly.vertices
             xs = [vertex.x for vertex in vertices]
             ys = [vertex.y for vertex in vertices]
-            boxes.append((min(xs), min(ys), max(xs), max(ys)))
+            box = (min(xs), min(ys), max(xs), max(ys))
+            boxes.append(box)
+            tokens.append({"text": annotation.description, "box": list(box), "confidence": None})
 
-        return OCRResult(text=text, engine=self.name, boxes=tuple(boxes))
+        return OCRResult(text=text, engine=self.name, boxes=tuple(boxes), metadata={"tokens": tokens})
 
 
 def get_ocr_engine(engine: str | BaseOCREngine = "tesseract", **kwargs: Any) -> BaseOCREngine:
@@ -296,4 +329,3 @@ def _safe_float(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError):
         return -1.0
-

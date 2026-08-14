@@ -4,6 +4,8 @@ VisionParse is a small, practical toolkit for turning messy image-based document
 
 It started life as a set of computer-vision experiments. This package gives those ideas a proper home: import-safe modules, a CLI, tests, PyPI metadata, and GitHub Actions publishing.
 
+The heart of the project is still research-minded: use free/local OCR first, keep text localized with bounding boxes, preserve the page/menu layout as much as possible, and only bring in heavier YOLO or LLM tools when they genuinely help.
+
 ```bash
 pip install visionparse
 ```
@@ -13,6 +15,7 @@ pip install visionparse
 - Runs OCR with Tesseract, EasyOCR, Keras OCR, or Google Vision.
 - Preprocesses images before OCR: resize, grayscale, denoise, threshold, contrast, crop.
 - Runs YOLO detections and returns clean bounding boxes.
+- Groups localized OCR words into lines and blocks so aligned text stays aligned.
 - Extracts prices from noisy OCR text.
 - Turns menu-like OCR into lightweight structured items.
 - Optionally asks an LLM/LangChain flow to clean up the structure.
@@ -105,8 +108,25 @@ pipeline = DocumentPipeline(ocr_engine="tesseract")
 result = pipeline.run("menu.jpg")
 
 print(result.text)
+print(result.layout_text)  # layout-preserving text when OCR boxes are available
 print([price.raw for price in result.prices])
 print([item.to_dict() for item in result.items])
+```
+
+### Preserve layout from localized OCR
+
+```python
+from visionparse.ocr.localization import TextToken, group_tokens_into_lines, render_aligned_text
+
+tokens = [
+    TextToken("Burger", (10, 10, 70, 25)),
+    TextToken("£7.99", (180, 10, 230, 25)),
+    TextToken("Fries", (10, 45, 55, 60)),
+    TextToken("£2.50", (180, 45, 230, 60)),
+]
+
+lines = group_tokens_into_lines(tokens)
+print(render_aligned_text(lines, char_width=10))
 ```
 
 ### Use YOLO regions before OCR
@@ -125,6 +145,8 @@ for region in result.regions:
 ```
 
 Model weights are not bundled. Keep them outside the package or in `visionparse/models/` locally, but do not commit them.
+
+The original research code referenced fine-tuned YOLO weights such as `best (1).pt` and `best (2).pt`. Those files were not present in this workspace when the public package was prepared, so the repo ships the model loader and model-card docs rather than pretending the weights are included. See `docs/model-card.md`.
 
 ## Command line
 
@@ -260,6 +282,21 @@ print(cleaned)
 
 No OpenAI key is stored in the package. The code reads from `OPENAI_API_KEY` at runtime.
 
+## Research notes, examples, and benchmarks
+
+The repo includes:
+
+- `docs/research.md` — project findings and outcomes from the OCR/layout experiments.
+- `docs/model-card.md` — how the fine-tuned YOLO model should be handled.
+- `examples/` — free OCR and YOLO+OCR usage scripts.
+- `benchmarks/` — lightweight text/layout benchmarks plus an optional local image OCR runner.
+
+The public package does not commit the old generated images, notebooks, OCR outputs, or service-account files. If you want to benchmark the legacy images locally, keep them in `.visionparse_private_legacy/` or another local folder:
+
+```bash
+python benchmarks/run_benchmarks.py --images .visionparse_private_legacy
+```
+
 ## Package layout
 
 ```text
@@ -332,4 +369,3 @@ The tests avoid heavyweight OCR/model dependencies. They check the parser, price
 ## License
 
 MIT.
-

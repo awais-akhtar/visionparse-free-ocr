@@ -13,7 +13,7 @@ AMOUNT_PATTERN = r"(?:\d{1,3}(?:[,\s]\d{3})+|\d+)(?:[.,]\d{1,2})?"
 PRICE_PATTERN = re.compile(
     rf"(?P<prefix>{CURRENCY_PATTERN})?\s*"
     rf"(?P<amount>{AMOUNT_PATTERN})"
-    rf"\s*(?P<suffix>{CURRENCY_PATTERN})?"
+    rf"\s*(?P<suffix>{CURRENCY_PATTERN})?(?!\s*\d)"
     rf"(?P<trailing>\s*/-)?",
     flags=re.IGNORECASE,
 )
@@ -185,4 +185,3 @@ def _to_decimal(value: Decimal | int | str) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-

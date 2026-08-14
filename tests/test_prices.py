@@ -22,7 +22,12 @@ class PriceExtractionTests(unittest.TestCase):
         self.assertEqual(price.currency, "PKR")
         self.assertEqual(price.amount, Decimal("1250.00"))
 
+    def test_item_number_before_symbol_price_is_not_price(self):
+        prices = extract_prices("American Hot Dog 1 $ 7")
+
+        self.assertEqual([price.raw for price in prices], ["$ 7"])
+        self.assertEqual(prices[0].amount, Decimal("7"))
+
 
 if __name__ == "__main__":
     unittest.main()
-

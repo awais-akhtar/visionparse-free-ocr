@@ -1,0 +1,15 @@
+[
+  {"category": "Hot Dog", "name": "American Hot Dog 1", "prices": ["$ 7"]},
+  {"category": "Hot Dog", "name": "American Hot Dog 2", "prices": ["$ 6"]},
+  {"category": "Hot Dog", "name": "American Hot Dog 3", "prices": ["$ 5"]},
+  {"category": "Sandwich", "name": "Ham and cheese sandwich", "prices": ["$ 8"]},
+  {"category": "Sandwich", "name": "Club sandwich", "prices": ["$ 7"]},
+  {"category": "Sandwich", "name": "Tuna fish sandwich", "prices": ["$ 9"]},
+  {"category": "French fries", "name": "Large Fries", "prices": ["$ 5"]},
+  {"category": "French fries", "name": "Medium Fries", "prices": ["$ 6"]},
+  {"category": "French fries", "name": "Small Fries", "prices": ["$ 7"]},
+  {"category": "Drink", "name": "Coca-Cola", "prices": ["$ 4"]},
+  {"category": "Drink", "name": "Sprite", "prices": ["$ 4"]},
+  {"category": "Drink", "name": "Orange Juice", "prices": ["$ 4"]}
+]
+

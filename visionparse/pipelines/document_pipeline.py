@@ -19,6 +19,7 @@ class RegionResult:
 
     box: Optional[Box]
     text: str
+    layout_text: Optional[str] = None
     prices: tuple[PriceMention, ...] = ()
     ocr: Optional[OCRResult] = None
 
@@ -26,6 +27,7 @@ class RegionResult:
         return {
             "box": list(self.box) if self.box else None,
             "text": self.text,
+            "layout_text": self.layout_text,
             "prices": [price.to_dict() for price in self.prices],
             "ocr": self.ocr.to_dict() if self.ocr else None,
         }
@@ -37,6 +39,7 @@ class PipelineResult:
 
     image: str
     text: str
+    layout_text: Optional[str] = None
     prices: tuple[PriceMention, ...] = ()
     items: tuple[MenuItem, ...] = ()
     regions: tuple[RegionResult, ...] = ()
@@ -48,6 +51,7 @@ class PipelineResult:
         return {
             "image": self.image,
             "text": self.text,
+            "layout_text": self.layout_text,
             "prices": [price.to_dict() for price in self.prices],
             "items": [item.to_dict() for item in self.items],
             "regions": [region.to_dict() for region in self.regions],
@@ -97,8 +101,8 @@ class DocumentPipeline:
         """Parse one image document."""
 
         image_path = Path(image)
-        prepared_image = load_image(image_path)
         detections: tuple[Any, ...] = ()
+        prepared_image: Any = None
 
         if boxes is None:
             detector = self.detector
@@ -112,6 +116,7 @@ class DocumentPipeline:
 
         regions: list[RegionResult] = []
         if boxes:
+            prepared_image = load_image(image_path)
             crops = crop_regions(prepared_image, boxes, padding=self.crop_padding)
             for box, crop in zip(boxes, crops):
                 ocr = self.ocr_engine.read(crop)
@@ -122,9 +127,17 @@ class DocumentPipeline:
                         allow_plain_numbers=self.allow_plain_number_prices,
                     )
                 )
-                regions.append(RegionResult(box=box, text=ocr.text, prices=prices, ocr=ocr))
+                regions.append(
+                    RegionResult(
+                        box=box,
+                        text=ocr.text,
+                        layout_text=ocr.layout_text,
+                        prices=prices,
+                        ocr=ocr,
+                    )
+                )
         else:
-            ocr = self.ocr_engine.read(prepared_image)
+            ocr = self.ocr_engine.read(image_path)
             prices = tuple(
                 extract_prices(
                     ocr.text,
@@ -132,9 +145,20 @@ class DocumentPipeline:
                     allow_plain_numbers=self.allow_plain_number_prices,
                 )
             )
-            regions.append(RegionResult(box=None, text=ocr.text, prices=prices, ocr=ocr))
+            regions.append(
+                RegionResult(
+                    box=None,
+                    text=ocr.text,
+                    layout_text=ocr.layout_text,
+                    prices=prices,
+                    ocr=ocr,
+                )
+            )
 
         combined_text = "\n\n".join(region.text for region in regions if region.text).strip()
+        combined_layout_text = "\n\n".join(
+            region.layout_text or region.text for region in regions if region.layout_text or region.text
+        ).strip()
         prices = tuple(
             extract_prices(
                 combined_text,
@@ -153,6 +177,7 @@ class DocumentPipeline:
         return PipelineResult(
             image=str(image_path),
             text=combined_text,
+            layout_text=combined_layout_text,
             prices=prices,
             items=items,
             regions=tuple(regions),
@@ -179,4 +204,3 @@ def parse_document(image: str | Path, **kwargs: Any) -> PipelineResult:
         }
     }
     return DocumentPipeline(**pipeline_options).run(image, **kwargs)
-

@@ -1,0 +1,20 @@
+Hot Dog
+American Hot Dog 1        $ 7
+American Hot Dog 2        $ 6
+American Hot Dog 3        $ 5
+
+Sandwich
+Ham and cheese sandwich   $ 8
+Club sandwich             $ 7
+Tuna fish sandwich        $ 9
+
+French fries
+Large Fries               $ 5
+Medium Fries              $ 6
+Small Fries               $ 7
+
+Drink
+Coca-Cola                 $ 4
+Sprite                    $ 4
+Orange Juice              $ 4
+
