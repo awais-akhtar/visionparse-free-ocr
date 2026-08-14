@@ -3,8 +3,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "visionparse"
-version = "0.1.0"
+name = "visionparse-free-ocr"
+version = "0.1.1"
 description = "A tidy OCR, object-detection, price-extraction, and document parsing toolkit for computer-vision workflows."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -93,9 +93,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/awais-akhtar/VisionParse"
-Repository = "https://github.com/awais-akhtar/VisionParse"
-Issues = "https://github.com/awais-akhtar/VisionParse/issues"
+Homepage = "https://github.com/awais-akhtar/visionparse-free-ocr"
+Repository = "https://github.com/awais-akhtar/visionparse-free-ocr"
+Issues = "https://github.com/awais-akhtar/visionparse-free-ocr/issues"
 
 [project.scripts]
 visionparse = "visionparse.cli:main"

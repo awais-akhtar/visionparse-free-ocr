@@ -7,7 +7,13 @@ It started life as a set of computer-vision experiments. This package gives thos
 The heart of the project is still research-minded: use free/local OCR first, keep text localized with bounding boxes, preserve the page/menu layout as much as possible, and only bring in heavier YOLO or LLM tools when they genuinely help.
 
 ```bash
-pip install visionparse
+pip install visionparse-free-ocr
+```
+
+The PyPI distribution is named `visionparse-free-ocr`. The Python import stays short:
+
+```python
+import visionparse
 ```
 
 ## What it does
@@ -26,13 +32,13 @@ pip install visionparse
 The base install is intentionally light:
 
 ```bash
-pip install visionparse
+pip install visionparse-free-ocr
 ```
 
 For OCR with Tesseract:
 
 ```bash
-pip install "visionparse[ocr]"
+pip install "visionparse-free-ocr[ocr]"
 ```
 
 You still need the Tesseract system binary installed. On Windows, install Tesseract and either add it to `PATH` or pass the path when you create the engine.
@@ -40,13 +46,13 @@ You still need the Tesseract system binary installed. On Windows, install Tesser
 For YOLO detection:
 
 ```bash
-pip install "visionparse[yolo]"
+pip install "visionparse-free-ocr[yolo]"
 ```
 
 For the full kitchen sink:
 
 ```bash
-pip install "visionparse[all]"
+pip install "visionparse-free-ocr[all]"
 ```
 
 Extras are split this way because object detection, EasyOCR, Keras OCR, and Google Vision pull in heavier dependencies. Most projects do not need all of them at once.
@@ -220,7 +226,7 @@ visionparse detect menu.jpg --model models/menu-sections.pt --output annotated.j
 Good default when you want a local, lightweight OCR engine. Install the Python extra and the system binary:
 
 ```bash
-pip install "visionparse[ocr]"
+pip install "visionparse-free-ocr[ocr]"
 ```
 
 ```python
@@ -245,7 +251,7 @@ set TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
 ### EasyOCR
 
 ```bash
-pip install "visionparse[easyocr]"
+pip install "visionparse-free-ocr[easyocr]"
 ```
 
 ```python
@@ -258,7 +264,7 @@ result = ocr.read("shop-sign.jpg")
 ### Keras OCR
 
 ```bash
-pip install "visionparse[keras]"
+pip install "visionparse-free-ocr[keras]"
 ```
 
 ```python
@@ -271,7 +277,7 @@ result = ocr.read("menu.jpg")
 ### Google Vision
 
 ```bash
-pip install "visionparse[google]"
+pip install "visionparse-free-ocr[google]"
 ```
 
 Use Application Default Credentials, or pass a service-account file at runtime. Do not commit the JSON file.
@@ -288,7 +294,7 @@ print(ocr.read("invoice.jpg").text)
 The regular parser is deterministic and does not need an API key. If you want LLM cleanup, install the LLM extra and use an environment variable:
 
 ```bash
-pip install "visionparse[llm]"
+pip install "visionparse-free-ocr[llm]"
 set OPENAI_API_KEY=your-key-here
 ```
 
@@ -346,8 +352,8 @@ To publish:
 3. Push a version tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 The workflow builds the source distribution and wheel, checks them with Twine, and publishes to PyPI using the secret.
