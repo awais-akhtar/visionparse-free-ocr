@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "visionparse-free-ocr"
-version = "0.1.1"
+version = "0.1.2"
 description = "A tidy OCR, object-detection, price-extraction, and document parsing toolkit for computer-vision workflows."
 readme = "README.md"
 requires-python = ">=3.9"

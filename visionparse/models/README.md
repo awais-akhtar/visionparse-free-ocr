@@ -1,6 +1,6 @@
 # Model assets
 
-This folder contains small model reference files recovered from the research workspace:
+This folder contains small model reference files:
 
 - `yolov3.cfg`
 - `coco.names`
@@ -16,7 +16,7 @@ Large binary weights are not committed:
 - `.pb`
 - `.tflite`
 
-The legacy scripts reference fine-tuned weights named like `best (1).pt` and `best (2).pt`, and TensorFlow examples reference `frozen_inference_graph.pb`. Those files are not present in this workspace. Put them here locally or pass their path at runtime.
+The legacy scripts reference fine-tuned weights named like `best (1).pt` and `best (2).pt`, and TensorFlow examples reference `frozen_inference_graph.pb`. Those files are not present in this workspace.
 
 Example with Darknet YOLO:
 

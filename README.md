@@ -2,15 +2,13 @@
 
 VisionParse is a small, practical toolkit for turning messy image-based documents into useful text and data. It wraps the pieces that usually end up scattered across notebooks: OCR, image preprocessing, YOLO/object detection, price extraction, and optional LLM cleanup.
 
-It started life as a set of computer-vision experiments. This package gives those ideas a proper home: import-safe modules, a CLI, tests, PyPI metadata, and GitHub Actions publishing.
+It started life as a set of computer-vision experiments. This package gives those ideas a proper home: import-safe modules, a CLI, tests, PyPI metadata, and GitHub Actions.
 
 The heart of the project is still research-minded: use free/local OCR first, keep text localized with bounding boxes, preserve the page/menu layout as much as possible, and only bring in heavier YOLO or LLM tools when they genuinely help.
 
 ```bash
 pip install visionparse-free-ocr
 ```
-
-The PyPI distribution is named `visionparse-free-ocr`. The Python import stays short:
 
 ```python
 import visionparse
@@ -41,7 +39,7 @@ For OCR with Tesseract:
 pip install "visionparse-free-ocr[ocr]"
 ```
 
-You still need the Tesseract system binary installed. On Windows, install Tesseract and either add it to `PATH` or pass the path when you create the engine.
+You still need the Tesseract system binary installed. On Windows, install Tesseract and either add it to `PATH` or pass the path when create the engine.
 
 For YOLO detection:
 
@@ -55,7 +53,7 @@ For the full kitchen sink:
 pip install "visionparse-free-ocr[all]"
 ```
 
-Extras are split this way because object detection, EasyOCR, Keras OCR, and Google Vision pull in heavier dependencies. Most projects do not need all of them at once.
+Extras are split this way because object detection, EasyOCR, Keras OCR, and Google Vision pull in heavier dependencies.
 
 ## Quick start
 
@@ -98,7 +96,7 @@ from visionparse.ocr.engine import TesseractOCR
 ocr = TesseractOCR(
     languages="eng",
     config="--oem 3 --psm 6",
-    # tesseract_cmd=r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+    tesseract_cmd=r"C:\Program Files\Tesseract-OCR\tesseract.exe",
 )
 
 result = ocr.read("menu.jpg")
@@ -150,9 +148,7 @@ for region in result.regions:
     print(region.box, region.text[:120])
 ```
 
-Model weights are not bundled. Keep them outside the package or in `visionparse/models/` locally, but do not commit them.
-
-The original research code referenced fine-tuned YOLO weights such as `best (1).pt` and `best (2).pt`. Those binary files were not present in this workspace when the public package was prepared. The repo does include the safe model reference assets that were present, including `yolov3.cfg`, `coco.names`, and COCO/TensorFlow config files. See `docs/model-card.md`.
+See `docs/model-card.md`.
 
 Darknet/OpenCV YOLO is also supported:
 
@@ -223,7 +219,7 @@ visionparse detect menu.jpg --model models/menu-sections.pt --output annotated.j
 
 ### Tesseract
 
-Good default when you want a local, lightweight OCR engine. Install the Python extra and the system binary:
+Good default when wanted a local, lightweight OCR engine. Install the Python extra and the system binary:
 
 ```bash
 pip install "visionparse-free-ocr[ocr]"
@@ -280,7 +276,7 @@ result = ocr.read("menu.jpg")
 pip install "visionparse-free-ocr[google]"
 ```
 
-Use Application Default Credentials, or pass a service-account file at runtime. Do not commit the JSON file.
+Use Application Default Credentials, or pass a service-account file at runtime. 
 
 ```python
 from visionparse.ocr.engine import GoogleVisionOCR
@@ -291,7 +287,7 @@ print(ocr.read("invoice.jpg").text)
 
 ## LLM/LangChain cleanup
 
-The regular parser is deterministic and does not need an API key. If you want LLM cleanup, install the LLM extra and use an environment variable:
+The regular parser is deterministic and does not need an API key. If needed LLM cleanup, install the LLM extra and use an environment variable:
 
 ```bash
 pip install "visionparse-free-ocr[llm]"
@@ -305,18 +301,17 @@ cleaned = structure_with_llm(raw_ocr_text, model="gpt-4o-mini")
 print(cleaned)
 ```
 
-No OpenAI key is stored in the package. The code reads from `OPENAI_API_KEY` at runtime.
+The code reads from `OPENAI_API_KEY` at runtime.
 
 ## Research notes, examples, and benchmarks
 
-The repo includes:
+Includes:
 
 - `docs/research.md` — project findings and outcomes from the OCR/layout experiments.
 - `docs/model-card.md` — how the fine-tuned YOLO model should be handled.
 - `examples/` — free OCR and YOLO+OCR usage scripts.
 - `benchmarks/` — lightweight text/layout benchmarks plus an optional local image OCR runner.
 
-The public package does not commit the old generated images, notebooks, OCR outputs, or service-account files. If you want to benchmark the legacy images locally, keep them in `.visionparse_private_legacy/` or another local folder:
 
 ```bash
 python benchmarks/run_benchmarks.py --images .visionparse_private_legacy
@@ -340,46 +335,6 @@ visionparse/
 ├── cli.py
 └── tests/
 ```
-
-## Publishing to PyPI from GitHub Actions
-
-This repo includes `.github/workflows/publish.yml`.
-
-To publish:
-
-1. Create a PyPI API token.
-2. Add it to the GitHub repository secrets as `PYPI_API_TOKEN`.
-3. Push a version tag:
-
-```bash
-git tag v0.1.1
-git push origin v0.1.1
-```
-
-The workflow builds the source distribution and wheel, checks them with Twine, and publishes to PyPI using the secret.
-
-You can also run the publish workflow manually from GitHub Actions.
-
-## Security notes
-
-This package should not contain:
-
-- OpenAI keys
-- AWS keys
-- Google service-account JSON files
-- YOLO weights
-- generated OCR output files
-- test images or notebook outputs
-
-Use environment variables or local-only files instead:
-
-```bash
-set OPENAI_API_KEY=...
-set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\service-account.json
-```
-
-The `.gitignore` is set up to keep the common mistakes out of the repo.
-
 ## Development
 
 ```bash

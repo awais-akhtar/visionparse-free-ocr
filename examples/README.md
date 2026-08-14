@@ -1,8 +1,8 @@
 # Examples
 
-The examples are written so they work with your own images and with the legacy research images if you still have them locally.
+The examples are written so they work with own images and with the legacy research images if still have them locally.
 
-The public repo does not commit third-party or generated images. Put sample images in `examples/assets/` or point the scripts at `.visionparse_private_legacy/` while working locally.
+The public repo does not have third-party or generated images. Put sample images in `examples/assets/` or point the scripts at `.visionparse_private_legacy/` while working locally.
 
 ```bash
 python examples/free_ocr_layout.py path/to/menu.jpg
